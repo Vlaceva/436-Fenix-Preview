@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>436 CC130J — Fenix 8 Preview</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0f12;--panel:#171a1f;--line:#2a2e35;--text:#f3f5f7;--muted:#9da5b0}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at 50% 10%,#1b2026 0,#0d0f12 45%,#090a0c 100%);color:var(--text);min-height:100vh}.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 48px}header{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap}h1{margin:0;font-size:clamp(1.35rem,3vw,2rem)}.sub{color:var(--muted);margin-top:6px;font-size:.92rem}.grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:22px;align-items:start}.card{background:rgba(23,26,31,.92);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.28)}.preview{padding:22px;display:flex;align-items:center;justify-content:center;min-height:560px;overflow:hidden}.watch-shell{width:min(88vw,540px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 36% 30%,#555d66 0 3%,#30363d 4% 12%,#11151a 13% 24%,#060708 25% 100%);padding:8.1%;position:relative;box-shadow:0 28px 65px rgba(0,0,0,.55),inset 0 0 0 2px #60666e,inset 0 0 0 7px #1b2026;transition:transform .15s ease}.watch-shell:after{content:"";position:absolute;inset:6.5%;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 25px rgba(255,255,255,.06),inset 0 -16px 30px rgba(0,0,0,.45)}canvas{width:100%;height:100%;border-radius:50%;display:block;background:#000}.controls{padding:20px}.controls h2{font-size:1rem;margin:0 0 16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}label{display:block;color:var(--muted);font-size:.8rem;margin-bottom:6px}input,select,button{width:100%;border:1px solid var(--line);border-radius:10px;background:#0e1115;color:var(--text);padding:10px 11px;font:inherit}button{cursor:pointer}button.primary{background:#213126;border-color:#35513c}button:hover{border-color:#59616c}.toggle{display:flex;align-items:center;gap:9px;padding:10px 0;color:var(--text);font-size:.9rem}.toggle input{width:auto}.meta{color:var(--muted);font-size:.78rem;line-height:1.5;margin-top:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#1d2820;color:#b7e3b7;border:1px solid #304b35;font-size:.75rem}.sep{height:1px;background:var(--line);margin:16px 0}@media(max-width:850px){.grid{grid-template-columns:1fr}.preview{min-height:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><h1>436 CC130J — Fenix 8 47 mm Preview</h1><div class="sub">Browser rendering of the current Garmin watch-face artwork and drawing logic.</div></div><span class="badge">454 × 454 native canvas</span></header>
+<div class="grid">
+<section class="card preview"><div class="watch-shell"><canvas id="watch" width="454" height="454"></canvas></div></section>
+<aside class="card controls">
+<h2>Preview controls</h2>
+<div class="row"><div><label for="mode">Display mode</label><select id="mode"><option value="active">Active</option><option value="aod">Always-on</option></select></div><div><label for="day">Date</label><input id="day" type="number" min="1" max="31" value="17"></div></div>
+<div class="row"><div><label for="hour">Hour</label><input id="hour" type="number" min="0" max="23" value="10"></div><div><label for="minute">Minute</label><input id="minute" type="number" min="0" max="59" value="10"></div></div>
+<div class="row"><div><label for="second">Second</label><input id="second" type="number" min="0" max="59" value="30"></div><div><label for="zoom">Preview size</label><select id="zoom"><option value="1">Normal</option><option value=".88">Smaller</option><option value="1.08">Larger</option></select></div></div>
+<label class="toggle"><input id="live" type="checkbox" checked> Use live browser time/date</label>
+<div class="sep"></div>
+<div class="row"><button id="set1010">Set 10:10</button><button id="set615">Set 06:15</button></div>
+<button class="primary" id="download">Save preview PNG</button>
+<div class="meta">This is a visual approximation of the Monkey C face, not Garmin's official simulator. It is useful for checking artwork, hand placement, date placement and AOD appearance before installing the PRG.<br><br><strong>Known issue:</strong> the current reference-derived dial background still contains portions of the photographed physical hands, so some times can show a ghost/double-hand effect.</div>
+</aside>
+</div></div>
+<script>
+const canvas=document.getElementById('watch'),ctx=canvas.getContext('2d'),img=new Image();img.src='dial_bg.png';
+const cx=227,cy=227,r=225;let timer=null;
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}function num(id){return Number(document.getElementById(id).value)||0}
+function rotateTranslate(points,angle){const ca=Math.cos(angle),sa=Math.sin(angle);return points.map(([px,py])=>[Math.round(cx+px*ca-py*sa),Math.round(cy+px*sa+py*ca)])}
+function fillPoly(pts,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.fill()}
+function shifted(pts,dx,dy){return pts.map(([x,y])=>[x+dx,y+dy])}
+function drawHand(angle,minuteHand){let tip,shaftHW,arrowHW,arrowH,baseY;if(minuteHand){tip=Math.round(r*.735);shaftHW=Math.round(r*.035);arrowHW=Math.round(r*.082);arrowH=Math.round(r*.175);baseY=8}else{tip=Math.round(r*.595);shaftHW=Math.round(r*.041);arrowHW=Math.round(r*.088);arrowH=Math.round(r*.170);baseY=6}const arrowBase=tip-arrowH;const outer=[[-shaftHW,baseY],[shaftHW,baseY],[shaftHW,-arrowBase],[arrowHW,-arrowBase],[0,-tip],[-arrowHW,-arrowBase],[-shaftHW,-arrowBase]];const innerHW=Math.max(shaftHW-4,2);const inner=[[-innerHW,minuteHand?3:2],[innerHW,minuteHand?3:2],[innerHW,-(arrowBase-5)],[arrowHW-7,-(arrowBase-5)],[0,-(tip-12)],[-(arrowHW-7),-(arrowBase-5)],[-innerHW,-(arrowBase-5)]];const o=rotateTranslate(outer,angle),i=rotateTranslate(inner,angle);fillPoly(shifted(o,2,2),'#050505');fillPoly(o,'#fff');fillPoly(i,'#111')}
+function circle(x,y,rad,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fill()}
+function drawDate(day){const x=Math.round(cx+r*.432),y=Math.round(cy+r*.405),rr=Math.round(r*.072);circle(x,y,rr+1,'#101010');circle(x,y,rr,'#050505');ctx.fillStyle='#fff';ctx.font='26px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(day).padStart(2,'0'),x,y+1)}
+function drawHub(){const r1=Math.round(r*.053),r2=Math.round(r*.038),r3=Math.round(r*.018);circle(cx+1,cy+2,r1+2,'#080808');circle(cx,cy,r1,'#202020');circle(cx,cy,r2,'#090909');circle(cx-1,cy-1,r3,'#252525')}
+function lineHand(angle,length,width){const x=Math.round(cx+length*Math.sin(angle)),y=Math.round(cy-length*Math.cos(angle));ctx.strokeStyle='#a8d6a7';ctx.lineWidth=width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);ctx.stroke()}
+function drawAod(hour,minute){ctx.fillStyle='#000';ctx.fillRect(0,0,454,454);for(let i=0;i<12;i++){const a=i*(Math.PI*2/12),rr=r*.82;circle(Math.round(cx+rr*Math.sin(a)),Math.round(cy-rr*Math.cos(a)),3,'#426645')}const h=hour%12;lineHand((h+minute/60)*(Math.PI*2/12),r*.52,6);lineHand(minute*(Math.PI*2/60),r*.69,4);circle(cx,cy,7,'#202020')}
+function values(){if(document.getElementById('live').checked){const n=new Date();return{hour:n.getHours(),minute:n.getMinutes(),second:n.getSeconds(),day:n.getDate()}}return{hour:clamp(num('hour'),0,23),minute:clamp(num('minute'),0,59),second:clamp(num('second'),0,59),day:clamp(num('day'),1,31)}}
+function render(){const v=values(),mode=document.getElementById('mode').value;ctx.clearRect(0,0,454,454);if(mode==='aod'){drawAod(v.hour,v.minute)}else{ctx.drawImage(img,0,0,454,454);drawDate(v.day);const h=v.hour%12;drawHand((h+v.minute/60)*(Math.PI*2/12),false);drawHand((v.minute+v.second/60)*(Math.PI*2/60),true);drawHub()}document.querySelector('.watch-shell').style.transform=`scale(${document.getElementById('zoom').value})`}
+function setManual(h,m,s=0){document.getElementById('live').checked=false;document.getElementById('hour').value=h;document.getElementById('minute').value=m;document.getElementById('second').value=s;render()}
+['mode','day','hour','minute','second','zoom','live'].forEach(id=>document.getElementById(id).addEventListener('input',render));document.getElementById('set1010').onclick=()=>setManual(10,10,30);document.getElementById('set615').onclick=()=>setManual(6,15,0);document.getElementById('download').onclick=()=>{render();const a=document.createElement('a');a.download='RSC436-preview.png';a.href=canvas.toDataURL('image/png');a.click()};img.onload=()=>{const n=new Date();document.getElementById('day').value=n.getDate();render();timer=setInterval(render,1000)};
+</script>
+</body></html>
