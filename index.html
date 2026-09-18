@@ -44,4 +44,5 @@ function render(){const v=values(),mode=document.getElementById('mode').value;ct
 function setManual(h,m,s=0){document.getElementById('live').checked=false;document.getElementById('hour').value=h;document.getElementById('minute').value=m;document.getElementById('second').value=s;render()}
 ['mode','day','hour','minute','second','zoom','live'].forEach(id=>document.getElementById(id).addEventListener('input',render));document.getElementById('set1010').onclick=()=>setManual(10,10,30);document.getElementById('set615').onclick=()=>setManual(6,15,0);document.getElementById('download').onclick=()=>{render();const a=document.createElement('a');a.download='RSC436-preview.png';a.href=canvas.toDataURL('image/png');a.click()};img.onload=()=>{const n=new Date();document.getElementById('day').value=n.getDate();render();timer=setInterval(render,1000)};
 </script>
+<!-- Public preview deployment -->
 </body></html>
